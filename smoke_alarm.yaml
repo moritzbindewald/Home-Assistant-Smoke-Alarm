@@ -1,7 +1,7 @@
 blueprint:
-  name: Rauchmelder-Alarm mit Bestätigung & Sirenen-Mute (mit Gruppen)
+  name: Rauchmelder-Alarm mit Bestätigung & Sirenen-Mute
   description: >
-    Rauchmelder-Alarm mit gruppierter Eingabe: Rollläden, Lichter, Benachrichtigung, Sirenen-Mute
+    Rauchmelder-Alarm: Rollläden, Lichter, Benachrichtigung, Sirenen-Mute
     und kritischer iOS Push mit Bestätigungs-Button.
   domain: automation
 
@@ -21,55 +21,40 @@ blueprint:
         entity:
           domain: select
 
-    covers_group:
-      name: Rollladen-Steuerung
-      description: Optionen zur Steuerung der Rollläden
-      default_expandable: true
-      input:
-        all_covers:
-          name: Alle Rollläden öffnen
-          selector:
-            boolean: {}
-          default: false
+    all_covers:
+      name: Alle Rollläden öffnen
+      selector:
+        boolean: {}
+      default: false
 
-        target_covers:
-          name: Ziel-Rollläden (wenn nicht alle)
-          selector:
-            target:
-              entity:
-                domain: cover
-          default: []
+    target_covers:
+      name: Ziel-Rollläden (wenn nicht alle)
+      selector:
+        target:
+          entity:
+            domain: cover
+      default: []
 
-    lights_group:
-      name: Licht-Steuerung
-      description: Optionen zur Steuerung der Lichter
-      default_expandable: true
-      input:
-        all_lights:
-          name: Alle Lichter einschalten
-          selector:
-            boolean: {}
-          default: false
+    all_lights:
+      name: Alle Lichter einschalten
+      selector:
+        boolean: {}
+      default: false
 
-        target_lights:
-          name: Ziel-Lichter (wenn nicht alle)
-          selector:
-            target:
-              entity:
-                domain: light
-          default: []
+    target_lights:
+      name: Ziel-Lichter (wenn nicht alle)
+      selector:
+        target:
+          entity:
+            domain: light
+      default: []
 
-    notify_group:
-      name: Benachrichtigungen
-      description: Auswahl für kritische Push-Nachricht
-      default_expandable: true
-      input:
-        notify_devices:
-          name: Mobilgeräte für Push-Nachricht
-          selector:
-            device:
-              integration: mobile_app
-              multiple: true
+    notify_devices:
+      name: Mobilgeräte für Push-Nachricht
+      selector:
+        device:
+          integration: mobile_app
+          multiple: true
 
 variables:
   action_ack: "ACKNOWLEDGE_ALARM"
@@ -86,10 +71,55 @@ action:
             entity_id: !input smoke_sensor
             state: "on"
         sequence:
-          # Rollläden öffnen (aus der covers_group)
           - choose:
               - conditions:
                   - condition: template
-                    value_template: "{{ !input covers_group.all_covers }}"
+                    value_template: "{{ !input all_covers }}"
                 sequence:
-                  - service: cover
+                  - service: cover.open_cover
+                    target:
+                      entity_id: all
+              - default:
+                  - service: cover.open_cover
+                    target: !input target_covers
+
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ !input all_lights }}"
+                sequence:
+                  - service: light.turn_on
+                    target:
+                      entity_id: all
+                    
+                      brightness_pct: 100
+              - default:
+                  - service: light.turn_on
+                    target: !input target_lights
+                    
+                      brightness_pct: 100
+
+          - repeat:
+              for_each: !input notify_devices
+              sequence:
+                - service: notify.mobile_app_{{ repeat.item }}
+                  
+                    title: "🚨 Rauchmelder Alarm!"
+                    message: >
+                      Alarm ausgelöst um {{ now().strftime('%H:%M:%S') }} Uhr
+                      vom Gerät: {{ state_attr(!input smoke_sensor, 'friendly_name') }}.
+                    
+                      critical: 1
+                      sound: "alarm.caf"
+                      actions:
+                        - action: "{{ action_ack }}"
+                          title: "Alarm bestätigen"
+                          destructive: true
+                          authenticationRequired: true
+
+          - wait_for_trigger:
+              - platform: event
+                event_type: mobile_app_notification_action
+                event_
+                  action: "{{ action_ack }}"
+            timeout: 3600
