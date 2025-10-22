@@ -75,7 +75,7 @@ action:
           - choose:
               - conditions:
                   - condition: template
-                    value_template: "{{ !input all_covers }}"
+                    value_template: "{{ input.all_covers }}"
                 sequence:
                   - service: cover.open_cover
                     target:
@@ -88,7 +88,7 @@ action:
           - choose:
               - conditions:
                   - condition: template
-                    value_template: "{{ !input all_lights }}"
+                    value_template: "{{ input.all_lights }}"
                 sequence:
                   - service: light.turn_on
                     target:
@@ -110,7 +110,7 @@ action:
                     title: "🚨 Rauchmelder Alarm!"
                     message: >
                       Alarm ausgelöst um {{ now().strftime('%H:%M:%S') }} Uhr
-                      vom Gerät: {{ state_attr(!input smoke_sensor, 'friendly_name') }}.
+                      vom Gerät: {{ state_attr(input.smoke_sensor, 'friendly_name') }}.
                     
                       critical: 1
                       sound: "alarm.caf"
