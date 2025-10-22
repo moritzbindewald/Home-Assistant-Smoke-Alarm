@@ -98,8 +98,9 @@ action:
               - default:
                   - service: light.turn_on
                     target: !input target_lights
-                    
-                      brightness_pct: 100
+      
+                    brightness_pct: 100
+
 
           # Push an ausgewählte Geräte mit Bestätigungs-Button
           - repeat:
