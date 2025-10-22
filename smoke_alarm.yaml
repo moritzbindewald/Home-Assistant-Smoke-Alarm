@@ -1,8 +1,8 @@
 blueprint:
   name: Rauchmelder-Alarm mit Bestätigung & Sirenen-Mute
   description: >
-    Rauchmelder-Alarm: Rollläden, Lichter, Benachrichtigung, Sirenen-Mute
-    und kritischer iOS Push mit Bestätigungs-Button.
+    Rauchmelder-Alarm: Öffnet Rollläden, schaltet Lichter, sendet kritische Push-Benachrichtigung.
+    Die Sirene (Buzzer) wird nach Bestätigung per App stummgeschaltet.
   domain: automation
 
   input:
@@ -28,7 +28,7 @@ blueprint:
       default: false
 
     target_covers:
-      name: Ziel-Rollläden (wenn nicht alle)
+      name: Ziel-Rollläden (nur ausfüllen, wenn "Alle Rollläden" aus)
       selector:
         target:
           entity:
@@ -42,7 +42,7 @@ blueprint:
       default: false
 
     target_lights:
-      name: Ziel-Lichter (wenn nicht alle)
+      name: Ziel-Lichter (nur ausfüllen, wenn "Alle Lichter" aus)
       selector:
         target:
           entity:
@@ -71,6 +71,7 @@ action:
             entity_id: !input smoke_sensor
             state: "on"
         sequence:
+          # Rollläden öffnen (alle oder ausgewählte)
           - choose:
               - conditions:
                   - condition: template
@@ -83,6 +84,7 @@ action:
                   - service: cover.open_cover
                     target: !input target_covers
 
+          # Lichter einschalten (alle oder ausgewählte)
           - choose:
               - conditions:
                   - condition: template
@@ -99,6 +101,7 @@ action:
                     
                       brightness_pct: 100
 
+          # Push an ausgewählte Geräte mit Bestätigungs-Button
           - repeat:
               for_each: !input notify_devices
               sequence:
@@ -117,9 +120,25 @@ action:
                           destructive: true
                           authenticationRequired: true
 
+          # Auf Bestätigung warten
           - wait_for_trigger:
               - platform: event
                 event_type: mobile_app_notification_action
                 event_
                   action: "{{ action_ack }}"
             timeout: 3600
+            continue_on_timeout: false
+
+          # Buzzer/Sirene muten
+          - service: select.select_option
+            target:
+              entity_id: !input buzzer_select
+            
+              option: "mute"
+
+          # Feedback-Nachricht
+          - service: notify.notify
+            
+              message: "Rauchmelder-Sirene deaktiviert (Bestätigung erhalten)."
+
+mode: single
