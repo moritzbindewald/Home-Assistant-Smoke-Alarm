@@ -108,7 +108,7 @@ action:
               sequence:
                 - service: notify.mobile_app_{{ repeat.item }}
                   
-                    title: "🚨 Rauchmelder Alarm!"
+                    title: "Rauchmelder Alarm!"
                     message: >
                       Alarm ausgelöst um {{ now().strftime('%H:%M:%S') }} Uhr
                       vom Gerät: {{ state_attr(!input smoke_sensor, 'friendly_name') }}.
