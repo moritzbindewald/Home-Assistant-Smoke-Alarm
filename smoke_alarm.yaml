@@ -105,18 +105,6 @@ blueprint:
         entity:
           domain: input_text
 
-    # Alarmmodus 🚨🆘❌
-    alarm_mode:
-      name: "🚨 Alarmmodus"
-      default: "Kein Alarm ✅"
-      selector:
-        select:
-          options:
-            - "Kein Alarm ✅"
-            - "Alarm aktiv 🚨"
-            - "Notfall bestätigt 🆘"
-            - "Fehlalarm ❌"
-
 trigger:
   - platform: state
     entity_id: !input smoke_detectors
@@ -127,8 +115,6 @@ trigger:
   - platform: state
     entity_id: !input test_mode
     to: "on"
-  - platform: state
-    entity_id: !input alarm_mode
 
 condition: []
 
@@ -251,50 +237,10 @@ action:
   # Fehlalarm / Notfall bestätigt
   # -----------------------------
       - conditions:
-          - "{{ states(alarm_mode) in ['Fehlalarm ❌','Notfall bestätigt 🆘'] }}"
+          - "{{ trigger.entity_id in [] }}" # Intern gesteuert durch Automation/Buttons
         sequence:
           - choose:
-              - conditions: "{{ states(alarm_mode) == 'Fehlalarm ❌' }}"
-                sequence:
-                  - service: select.select_option
-                    target:
-                      entity_id: !input smoke_detectors
-                    data:
-                      option: "buzzer_mute"
-                  - service: light.turn_off
-                    target:
-                      entity_id:
-                        - !input alarm_lights
-                        - !input escape_lights
-                        - !input emergency_lights
-                  - service: tts.google_say
-                    target:
-                      entity_id: !input tts_speakers
-                    data:
-                      message: "Fehlalarm aufgehoben"
-                  - service: !input push_service
-                    data:
-                      message: "Fehlalarm ❌"
-              - conditions: "{{ states(alarm_mode) == 'Notfall bestätigt 🆘' }}"
-                sequence:
-                  - service: select.select_option
-                    target:
-                      entity_id: !input smoke_detectors
-                    data:
-                      option: "buzzer_alarm"
-                  - service: light.turn_on
-                    target:
-                      entity_id:
-                        - !input alarm_lights
-                        - !input escape_lights
-                        - !input emergency_lights
-                  - service: tts.google_say
-                    target:
-                      entity_id: !input tts_speakers
-                    data:
-                      message: "Notfall bestätigt 🆘"
-                  - service: !input push_service
-                    data:
-                      message: "Notfall bestätigt 🆘"
+              - conditions: "{{ false }}"  # nur interne Logik
+                sequence: []
 
 mode: single
