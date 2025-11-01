@@ -1,9 +1,8 @@
 blueprint:
-  name: "Feueralarm Full Dashboard + Sync 🔥"
+  name: "Feueralarm Full Dashboard + Auto Buzzer 🔥"
   description: >
-    Vollständiger Feueralarm-Blueprint mit Dashboard-Visualisierung.
-    Enthält: Alarm-Modi, Testmodus, Präsenz-Logik, Personengruppen, Push, Lichter, TTS,
-    konfigurierbare Entitäten, Rauchmelder-Synchronisation, Eskalation, Logging/Dashboard, Notfallmodus.
+    Vollständiger Feueralarm-Blueprint mit automatischer Buzzer-Steuerung.
+    Testmodus stumm, Normalalarm laut, Fehlalarm aus.
   domain: automation
   input:
     # Rauchmelder 🌐
@@ -14,16 +13,6 @@ blueprint:
         entity:
           domain: binary_sensor
           multiple: true
-    smoke_buzzer_mode:
-      name: "🔔 Buzzer-Modus"
-      description: "Optionen für Rauchmelder-Sirene / Buzzer"
-      default: "buzzer_alarm"
-      selector:
-        select:
-          options:
-            - "buzzer_select"
-            - "buzzer_alarm"
-            - "buzzer_mute"
 
     # Lichter / Szenen 💡
     alarm_lights:
@@ -151,6 +140,11 @@ action:
       - conditions:
           - "{{ is_state(test_mode,'on') }}"
         sequence:
+          - service: select.select_option
+            target:
+              entity_id: !input smoke_detectors
+            data:
+              option: "buzzer_mute"
           - service: light.turn_on
             target:
               entity_id:
@@ -190,6 +184,11 @@ action:
       - conditions:
           - "{{ trigger.entity_id == !input emergency_button }}"
         sequence:
+          - service: select.select_option
+            target:
+              entity_id: !input smoke_detectors
+            data:
+              option: "buzzer_alarm"
           - service: light.turn_on
             target:
               entity_id:
@@ -213,13 +212,11 @@ action:
   # -----------------------------
       - conditions: []
         sequence:
-          # Rauchmelder-Buzzer synchronisieren
           - service: select.select_option
             target:
               entity_id: !input smoke_detectors
             data:
-              option: !input smoke_buzzer_mode
-          # Präsenz prüfen
+              option: "buzzer_alarm"
           - choose:
               - conditions: "{{ states('persons') | selectattr('state','eq','home') | list | length > 0 }}"
                 sequence:
@@ -245,7 +242,6 @@ action:
                   - service: !input push_service
                     data:
                       message: "Feueralarm ausgelöst, niemand zu Hause"
-          # Eskalation
           - delay: !input escalation_delay
           - service: !input push_service
             data:
@@ -260,6 +256,11 @@ action:
           - choose:
               - conditions: "{{ states(alarm_mode) == 'Fehlalarm ❌' }}"
                 sequence:
+                  - service: select.select_option
+                    target:
+                      entity_id: !input smoke_detectors
+                    data:
+                      option: "buzzer_mute"
                   - service: light.turn_off
                     target:
                       entity_id:
@@ -276,6 +277,11 @@ action:
                       message: "Fehlalarm ❌"
               - conditions: "{{ states(alarm_mode) == 'Notfall bestätigt 🆘' }}"
                 sequence:
+                  - service: select.select_option
+                    target:
+                      entity_id: !input smoke_detectors
+                    data:
+                      option: "buzzer_alarm"
                   - service: light.turn_on
                     target:
                       entity_id:
