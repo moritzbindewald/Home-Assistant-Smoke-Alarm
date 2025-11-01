@@ -1,355 +1,337 @@
 blueprint:
-  name: "Rauchmelder Alarm 🔥 Vollständig + Testmodus + Manueller Alarm + Stummschalten"
+  name: "Feueralarm Automation 🔥"
   description: >
-    🚨 Vollständig konfigurierbare Rauchmelder-Alarmautomation für Home Assistant
-
-    **Features:**  
-    🔹 Basisalarm: Lichter, Rollos, Sirenen / TTS  
-    🔹 Friendly Names für Rauchmelder  
-    🔹 Raumerkennung / Sensorraum-Mapping  
-    🔹 Testmodus: Einzelentität, Volltest, alle Rauchmelder  
-    🔹 Manueller Alarm / Trigger flexibel  
-    🔹 Wiederholungsalarm / Reminder  
-    🔹 Flexible Stummschaltung / Buzzer-Option  
-    🔹 Präsenzabhängige Aktionen & Anzeige  
-    🔹 Monitoring während Alarm
-
+    Umfassender Feueralarm-Blueprint für Home Assistant. 
+    Unterstützt Alarm-Modi, Testmodus (voll/selektiv), Präsenzlogik, Personengruppen, Push, Lichter/Szenen, TTS, konfigurierbare Entitäten, Rauchmelder-Synchronisation, Eskalationslogik, Logging/Dashboard und Notfallmodus.
   domain: automation
-
   input:
-    # --- Rauchmelder ---
-    smoke_sensors:
-      name: "Rauchmelder *"
-      description: "Liste der zu überwachenden Rauchmelder"
+    # -----------------------------
+    # 1️⃣ Alarm-Modi
+    # -----------------------------
+    alarm_mode:
+      name: "Alarmmodus"
+      description: "Initialer Alarmmodus"
+      default: "Kein Alarm ✅"
+      selector:
+        select:
+          options:
+            - "Kein Alarm ✅"
+            - "Alarm aktiv 🚨"
+            - "Notfall bestätigt 🆘"
+            - "Fehlalarm ❌"
+
+    # -----------------------------
+    # 2️⃣ Testmodus
+    # -----------------------------
+    test_mode:
+      name: "Testmodus aktivieren 🧪"
+      description: "Aktiviere Testmodus"
+      default: false
+      selector:
+        boolean: {}
+
+    test_mode_duration:
+      name: "Testmodus Dauer"
+      description: "Wie lange der Testmodus aktiv bleibt"
+      default: "00:30:00"
+      selector:
+        duration: {}
+
+    test_mode_full_program:
+      name: "Volles Testprogramm"
+      description: "Führt alle Aktionen wie im echten Alarm aus"
+      default: true
+      selector:
+        boolean: {}
+
+    # -----------------------------
+    # 3️⃣ Präsenz-Erkennung
+    # -----------------------------
+    presence_sensors:
+      name: "Präsenzsensoren 👥"
+      description: "Binary Sensoren für Bewegung/Türen/Fenster"
       selector:
         entity:
           domain: binary_sensor
-          device_class: smoke
           multiple: true
 
-    smoke_sensor_friendly_names:
-      name: "Friendly Names"
-      description: "Optional: Friendly Names für Rauchmelder"
-      default: {}
+    persons:
+      name: "Personen zu Hause"
+      description: "Personen-Entities"
       selector:
-        object: {}
+        entity:
+          domain: person
+          multiple: true
 
-    smoke_sensor_rooms:
-      name: "Räume"
-      description: "Optional: Rauchmelder bestimmten Räumen zuordnen"
-      default: {}
+    # -----------------------------
+    # 4️⃣ Personengruppen
+    # -----------------------------
+    residents_group:
+      name: "Bewohner 👪"
       selector:
-        object: {}
+        entity:
+          domain: group
+    emergency_contacts:
+      name: "Notfallkontakte 👪"
+      selector:
+        entity:
+          domain: group
 
-    # --- Alarmgeräte ---
-    lights:
-      name: "💡 Lichter"
-      description: "Lichter bei Alarm"
-      default: []
+    # -----------------------------
+    # 5️⃣ Push-Benachrichtigungen
+    # -----------------------------
+    push_service:
+      name: "Push-Service 📲"
+      selector:
+        action:
+
+    # -----------------------------
+    # 6️⃣ Beleuchtung / Szenen
+    # -----------------------------
+    alarm_lights:
+      name: "Alarm-Lichter 🔴"
       selector:
         entity:
           domain: light
           multiple: true
 
-    covers:
-      name: "🪟 Rollos"
-      description: "Rollos bei Alarm"
-      default: []
+    escape_lights:
+      name: "Fluchtweg 🟢"
       selector:
         entity:
-          domain: cover
+          domain: light
           multiple: true
 
-    sirens:
-      name: "🔊 Sirenen"
-      description: "Geräte, die Töne abspielen"
-      default: []
+    emergency_lights:
+      name: "Notfallbeleuchtung ⚪"
+      selector:
+        entity:
+          domain: light
+          multiple: true
+
+    # -----------------------------
+    # 7️⃣ TTS
+    # -----------------------------
+    tts_speakers:
+      name: "TTS-Speaker 🗣️"
       selector:
         entity:
           domain: media_player
           multiple: true
 
-    tts_message:
-      name: "🗣️ TTS Nachricht"
-      description: "Nachricht für Lautsprecher / Alexa"
-      default: "Rauchalarm! Bitte prüfen Sie die Rauchmelder."
+    # -----------------------------
+    # 8️⃣ Konfigurierbare Entitäten
+    # -----------------------------
+    custom_entities:
+      name: "Konfigurierbare Entitäten ⚙️"
       selector:
-        text: {}
+        entity:
+          multiple: true
 
-    notify_target:
-      name: "📩 Benachrichtigung"
-      description: "Optional: Push-Empfänger"
-      default: []
-      selector:
-        target: {}
-
-    include_home_status_in_notification:
-      name: "🏠 Anwesenheitsstatus anzeigen"
-      description: "Zeigt, wer zuhause ist"
-      default: true
-      selector:
-        boolean: {}
-
-    presence_sensors:
-      name: "👥 Präsenzsensoren"
-      description: "Optional: Sensoren für Anwesenheit"
-      default: []
+    # -----------------------------
+    # 9️⃣ Rauchmelder
+    # -----------------------------
+    smoke_detectors:
+      name: "Rauchmelder 🌐"
       selector:
         entity:
           domain: binary_sensor
           multiple: true
 
-    duration:
-      name: "⏱️ Alarmdauer (Minuten)"
-      default: 15
-      selector:
-        number:
-          min: 1
-          max: 60
-          unit_of_measurement: "Minuten"
-
-    wait_timeout:
-      name: "⏳ Wartezeit auf Nutzerbestätigung (Minuten)"
-      default: 10
-      selector:
-        number:
-          min: 1
-          max: 60
-          unit_of_measurement: "Minuten"
-
-    continue_on_timeout:
-      name: "Alarm bei Timeout weiterlaufen lassen"
-      default: true
-      selector:
-        boolean: {}
-
-    repeat_alarm:
-      name: "🔁 Wiederholungsalarm"
-      description: "Benachrichtigung nach Timeout erneut"
-      default: true
-      selector:
-        boolean: {}
-
-    watch_devices:
-      name: "Geräte überwachen"
-      description: "Geräte, die während Alarm überwacht werden"
-      default: []
-      selector:
-        entity:
-          multiple: true
-
-    # --- Stummschaltung / Buzzer ---
-    mute_device:
-      name: "🔕 Gerät zum Stummschalten"
-      default: ""
-      selector:
-        device: {}
-
-    mute_method:
-      name: "Mute-Methode"
-      default: "select_option"
+    smoke_buzzer_mode:
+      name: "Buzzer-Modus"
+      default: "buzzer_alarm"
       selector:
         select:
           options:
-            - "select_option"
-            - "turn_off"
-            - "service_call"
+            - "buzzer_select"
+            - "buzzer_alarm"
+            - "buzzer_mute"
 
-    # --- Testmodus ---
-    test_mode:
-      name: "🧪 Testmodus"
-      default: "aus"
+    # -----------------------------
+    # 🔟 Eskalationslogik
+    # -----------------------------
+    escalation_delay:
+      name: "Zeit bis Eskalation ⚠️"
+      default: "00:02:00"
       selector:
-        select:
-          options:
-            - "aus"
-            - "nur_benachrichtigung"
-            - "nur_lichter"
-            - "nur_rollos"
-            - "nur_sirenen"
-            - "einzelentitaet"
-            - "alle_rauchmelder"
-            - "volltest"
+        duration: {}
 
-    test_entity:
-      name: "Einzelentität testen"
-      default: ""
+    # -----------------------------
+    # 1️⃣1️⃣ Logging & Dashboard
+    # -----------------------------
+    logbook_entity:
+      name: "Logbuch-Entity 📊"
       selector:
         entity:
-          multiple: false
+          domain: input_text
 
-    trigger_all_sensors:
-      name: "Alle Rauchmelder auslösen"
-      default: false
-      selector:
-        boolean: {}
-
-    # --- Manueller Alarm ---
-    manual_trigger_entity:
-      name: "Gerät/Entität für manuellen Alarm"
-      default: ""
+    dashboard_entity:
+      name: "Dashboard-Status-Entity"
       selector:
         entity:
-          multiple: false
+          domain: input_text
 
-    manual_trigger_mode:
-      name: "Manueller Alarm-Modus"
-      default: "select_option"
+    # -----------------------------
+    # 1️⃣2️⃣ Notfallmodus
+    # -----------------------------
+    emergency_button:
+      name: "Notfallmodus aktivieren 🏃‍♂️"
       selector:
-        select:
-          options:
-            - "select_option"
-            - "turn_on"
-            - "service_call"
+        entity:
+          domain: input_boolean
+
+variables:
+  alarm_active: "{{ states(alarm_mode) != 'Kein Alarm ✅' }}"
+  anyone_home: >
+    {{ states('persons') | selectattr('state','eq','home') | list | length > 0 }}
+  test_active: "{{ is_state(test_mode, 'on') }}"
 
 trigger:
   - platform: state
-    entity_id: !input smoke_sensors
+    entity_id: !input alarm_mode
+  - platform: state
+    entity_id: !input test_mode
+  - platform: state
+    entity_id: !input emergency_button
     to: "on"
 
 condition: []
 
 action:
-  - variables:
-      smoke_names: !input smoke_sensor_friendly_names
-      smoke_rooms: !input smoke_sensor_rooms
-      persons_home: >
-        {% set ph = states.person | selectattr('state','eq','home') | map(attribute='name') | list %}
-        {{ ph }}
-      sensors_active: >
-        {% set sa = states | selectattr('entity_id','in', presence_sensors) | selectattr('state','eq','on') | list %}
-        {{ sa }}
-      someone_home: "{{ (persons_home | length > 0) or (sensors_active | length > 0) }}"
-      monitored_devices: !input watch_devices
-      alarm_active: true
-      notified: false
-      lights_prev_state: >
-        {% set states_dict = {} %}
-        {% for l in lights %}
-          {% set states_dict = states_dict | combine({l: states(l)}) %}
-        {% endfor %}
-        {{ states_dict }}
-      covers_prev_state: >
-        {% set states_dict = {} %}
-        {% for c in covers %}
-          {% set states_dict = states_dict | combine({c: states(c)}) %}
-        {% endfor %}
-        {{ states_dict }}
-
-  # --- Testmodus ---
   - choose:
-      - conditions: "{{ test_mode != 'aus' }}"
+      # -----------------------------
+      # Testmodus aktiv
+      # -----------------------------
+      - conditions:
+          - "{{ test_active }}"
         sequence:
-          - variables:
-              sensors_to_trigger: >
-                {% if trigger_all_sensors %}
-                  {{ smoke_sensors }}
-                {% elif test_mode == 'einzelentitaet' and test_entity != '' %}
-                  ["{{ test_entity }}"]
-                {% else %}
-                  ["{{ trigger.entity_id }}"]
-                {% endif %}
-          - repeat:
-              for_each: "{{ sensors_to_trigger }}"
-              sequence:
-                - variables:
-                    current_sensor: "{{ repeat.item }}"
-                - choose:
-                    - conditions: "{{ test_mode in ['nur_benachrichtigung','volltest'] }}"
-                      sequence:
-                        - service: notify.notify
-                          data:
-                            message: "💬 Test: {{ smoke_rooms.get(current_sensor,'Unbekannter Raum') }}: {{ smoke_names.get(current_sensor,current_sensor) }}"
-                            target: !input notify_target
-                    - conditions: "{{ test_mode in ['nur_lichter','volltest'] }}"
-                      sequence:
-                        - service: light.turn_on
-                          target:
-                            entity_id: !input lights
-                          data:
-                            brightness_pct: 100
-                    - conditions: "{{ test_mode in ['nur_rollos','volltest'] }}"
-                      sequence:
-                        - service: cover.open_cover
-                          target:
-                            entity_id: !input covers
-                    - conditions: "{{ test_mode in ['nur_sirenen','volltest'] }}"
-                      sequence:
-                        - service: tts.google_translate_say
-                          target:
-                            entity_id: !input sirens
-                          data:
-                            message: !input tts_message
-
-  # --- Manueller Alarm ---
-  - choose:
-      - conditions: "{{ manual_trigger_entity != '' }}"
-        sequence:
-          - service: >
-              {% if manual_trigger_mode == 'turn_on' %}
-                homeassistant.turn_on
-              {% elif manual_trigger_mode == 'service_call' %}
-                script.trigger_manual_alarm
-              {% else %}
-                homeassistant.turn_on
-              {% endif %}
+          - choose:
+              - conditions:
+                  - "{{ test_mode_full_program }}"
+                sequence:
+                  - service: light.turn_on
+                    target:
+                      entity_id:
+                        - !input alarm_lights
+                        - !input escape_lights
+                        - !input emergency_lights
+                  - service: tts.google_say
+                    target:
+                      entity_id: !input tts_speakers
+                    data:
+                      message: "Testmodus: Alle Alarmaktionen aktiviert."
+                  - service: !input push_service
+                    data:
+                      message: "Testmodus: Vollprogramm"
+              - conditions: []
+                sequence:
+                  - service: light.turn_on
+                    target:
+                      entity_id: !input alarm_lights
+                  - service: tts.google_say
+                    target:
+                      entity_id: !input tts_speakers
+                    data:
+                      message: "Testmodus: Selektive Aktionen"
+                  - service: !input push_service
+                    data:
+                      message: "Testmodus: Selektiv"
+          - delay: !input test_mode_duration
+          - service: light.turn_off
             target:
-              entity_id: "{{ manual_trigger_entity }}"
-          - service: notify.notify
+              entity_id:
+                - !input alarm_lights
+                - !input escape_lights
+                - !input emergency_lights
+          - service: tts.google_say
+            target:
+              entity_id: !input tts_speakers
             data:
-              message: "💬 Manueller Alarm ausgelöst: {{ smoke_names.get(manual_trigger_entity, manual_trigger_entity) }}"
-              target: !input notify_target
+              message: "Testmodus beendet"
 
-  # --- Standard-Alarm + Stummschalten ---
-  - choose:
-      - conditions: "{{ test_mode in ['aus','volltest'] }}"
+      # -----------------------------
+      # Notfallmodus manuell
+      # -----------------------------
+      - conditions:
+          - "{{ is_state(trigger.entity_id,'on') and trigger.entity_id == !input emergency_button }}"
         sequence:
           - service: light.turn_on
             target:
-              entity_id: !input lights
-            data:
-              brightness_pct: 100
-          - service: cover.open_cover
+              entity_id:
+                - !input alarm_lights
+                - !input escape_lights
+                - !input emergency_lights
+          - service: tts.google_say
             target:
-              entity_id: !input covers
-          - service: tts.google_translate_say
-            target:
-              entity_id: !input sirens
+              entity_id: !input tts_speakers
             data:
-              message: !input tts_message
-          - service: notify.notify
+              message: "Notfallmodus aktiviert!"
+          - service: !input push_service
             data:
-              message: >
-                Rauchalarm! {{ smoke_names | default('Unbekannte Sensoren') }} ausgelöst
-              target: !input notify_target
-          - choose:
-              - conditions: "{{ mute_device != '' }}"
-                sequence:
-                  - choose:
-                      - conditions: "{{ mute_method == 'turn_off' }}"
-                        sequence:
-                          - service: homeassistant.turn_off
-                            target:
-                              entity_id: !input mute_device
-                      - conditions: "{{ mute_method == 'service_call' }}"
-                        sequence:
-                          - service: script.mute_device_service
-                            data:
-                              device: !input mute_device
-                      - conditions: "{{ mute_method == 'select_option' }}"
-                        sequence:
-                          - service: select.select_option
-                            target:
-                              entity_id: !input mute_device
-                            data:
-                              option: "stumm"
+              message: "Notfallmodus aktiviert 🏃‍♂️"
 
-  # --- Wiederholungsalarm ---
-  - choose:
-      - conditions: "{{ repeat_alarm }}"
+      # -----------------------------
+      # Normaler Alarmmodus
+      # -----------------------------
+      - conditions:
+          - "{{ alarm_active and not test_active }}"
         sequence:
-          - delay: "00:{{ wait_timeout }}:00"
-          - service: notify.notify
-            data:
-              message: "🔁 Wiederholungsalarm: {{ smoke_names | default('Unbekannte Sensoren') }}"
-              target: !input notify_target
+          - choose:
+              - conditions:
+                  - "{{ states(alarm_mode) == 'Alarm aktiv 🚨' }}"
+                sequence:
+                  - service: light.turn_on
+                    target:
+                      entity_id:
+                        - !input alarm_lights
+                        - !input escape_lights
+                        - !input emergency_lights
+                  - service: tts.google_say
+                    target:
+                      entity_id: !input tts_speakers
+                    data:
+                      message: "Feueralarm! Bitte beachten Sie die Sicherheitsmaßnahmen."
+                  - service: !input push_service
+                    data:
+                      message: "Alarm aktiv 🚨"
+                  - repeat:
+                      until:
+                        - condition: state
+                          entity_id: !input alarm_mode
+                          state: "Notfall bestätigt 🆘"
+                      sequence:
+                        - delay: !input escalation_delay
+                        - service: !input push_service
+                          data:
+                            message: "Eskalation: Alarm weiterhin aktiv 🚨"
+
+              - conditions:
+                  - "{{ states(alarm_mode) == 'Notfall bestätigt 🆘' }}"
+                sequence:
+                  - service: !input push_service
+                    data:
+                      message: "Notfall bestätigt 🆘"
+                  - service: light.turn_on
+                    target:
+                      entity_id:
+                        - !input alarm_lights
+                        - !input escape_lights
+                        - !input emergency_lights
+
+              - conditions:
+                  - "{{ states(alarm_mode) == 'Fehlalarm ❌' }}"
+                sequence:
+                  - service: light.turn_off
+                    target:
+                      entity_id:
+                        - !input alarm_lights
+                        - !input escape_lights
+                        - !input emergency_lights
+                  - service: tts.google_say
+                    target:
+                      entity_id: !input tts_speakers
+                    data:
+                      message: "Fehlalarm aufgehoben."
+
+mode: single
