@@ -1,181 +1,153 @@
 blueprint:
-  name: "Feueralarm Vollversion 🔥"
+  name: Rauchmelder Alarm mit Notfallbestätigung
   description: >
-    "Voll ausgestatteter Feueralarm-Blueprint für Home Assistant. Enthält Alarm-Modi, Eskalation, Präsenzlogik,
-    Push-Benachrichtigungen, Licht-/TTS-Steuerung, Rauchmelder, Notfallmodus
-    und Testmodus."
+    Rauchmelder-Blueprint mit drei Zuständen, Critical Alerts und Timeout.
+    - Alarm ausgelöst: Lichter + Push
+    - Notfall bestätigt: Aktionen nach Bestätigung oder Timeout
+    - Fehlalarm: Aktionen nach Fehlalarm
   domain: automation
   input:
-
-    ##########################################
-    # 1️⃣ Rauchmelder 🌐
-    ##########################################
     smoke_detectors:
-      name: "Rauchmelder 🌐"
-      description: "Rauchmelder zur Synchronisation"
+      name: Rauchmelder
+      description: Welche Rauchmelder den Alarm auslösen
       selector:
         entity:
           domain: binary_sensor
+          device_class: smoke
           multiple: true
 
-    smoke_detector_mode:
-      name: "Buzzer-Modus Rauchmelder"
-      description: "buzzer_select, buzzer_alarm oder buzzer_mute"
-      default: "buzzer_alarm"
-      selector:
-        select:
-          options:
-            - "buzzer_select"
-            - "buzzer_alarm"
-            - "buzzer_mute"
-
-    ##########################################
-    # 2️⃣ Präsenz-Erkennung 👥
-    ##########################################
-    persons:
-      name: "Personen im Haushalt"
-      description: "Personen-Entitäten für Anwesenheit"
+    residents_group:
+      name: Bewohner
+      description: Geräte, die benachrichtigt werden
       selector:
         entity:
-          domain: person
+          domain: device_tracker
           multiple: true
 
-    presence_sensors:
-      name: "Präsenzsensoren 👥"
-      description: "Bewegungsmelder, Türen, Fenster etc."
-      selector:
-        entity:
-          domain: binary_sensor
-          multiple: true
-
-    presence_no_one_home_action:
-      name: "Sonderfall: Niemand zu Hause, Aktivität erkannt"
-      description: "Aktion, wenn niemand zu Hause ist, aber Bewegung erkannt wird"
-      default: "nothing"
-      selector:
-        select:
-          options:
-            - "alarm"
-            - "push_only"
-            - "nothing"
-
-    ##########################################
-    # 3️⃣ Push-Gruppen 👪📲
-    ##########################################
-    residents_devices:
-      name: "Bewohner Geräte 👪"
-      description: "Geräte/Entitäten, die App-Push bei Alarmen erhalten"
+    alarm_triggered_lights:
+      name: Alarm ausgelöst – Lichter
+      description: Lichter, die beim Alarm aktiviert werden
       selector:
         target:
           entity:
+            domain: light
             multiple: true
 
-    emergency_contacts_devices:
-      name: "Notfallkontakte Geräte 👪"
-      description: "Geräte/Entitäten, die Push nur bei Notfall bestätigt erhalten"
+    emergency_confirmed_lights:
+      name: Notfall bestätigt – Lichter
+      description: Lichter für den Modus Notfall bestätigt
       selector:
         target:
           entity:
+            domain: light
             multiple: true
 
-    ##########################################
-    # 4️⃣ Licht / Szenen 💡
-    ##########################################
-    lights_scenes:
-      name: "Licht / Szenen 💡"
-      description: "Alarm-Lichter, Fluchtweg, Notfall-Beleuchtung"
-      selector:
-        entity:
-          domain: light
-          multiple: true
-
-    lights_restore_during_alarm:
-      name: "Wiederherstellungslogik aktiv"
-      description: "Lichter/Szenen während aktiven Alarmen automatisch wieder einschalten"
-      default: true
-      selector:
-        boolean: {}
-
-    ##########################################
-    # 5️⃣ TTS 🗣️
-    ##########################################
-    tts_speakers:
-      name: "TTS-Speaker 🗣️"
-      description: "Smarte Lautsprecher für Alarmmeldungen"
-      selector:
-        entity:
-          domain: media_player
-          multiple: true
-
-    ##########################################
-    # 6️⃣ Eskalation / Alarm-Modi / Notfall
-    ##########################################
-    alarm_mode:
-      name: "Alarmmodus"
-      description: "Auswahl des aktuellen Alarmmodus"
-      selector:
-        select:
-          options:
-            - "Kein Alarm"
-            - "Alarm aktiv"
-            - "Notfall bestätigt"
-            - "Fehlalarm"
-
-    alarm_mode_entities:
-      name: "Entitäten pro Alarmmodus"
-      description: "Welche Geräte/Rollos/Steckdosen/Kameras bei diesem Modus gesteuert werden"
+    false_alarm_lights:
+      name: Fehlalarm – Lichter
+      description: Lichter für den Modus Fehlalarm
       selector:
         target:
           entity:
+            domain: light
             multiple: true
 
-    escalation_time:
-      name: "Zeit bis Eskalation ⚠️"
-      description: "Sekunden bis Eskalation"
-      default: 60
+    alarm_timeout:
+      name: Zeit bis automatische Notfallbestätigung
+      description: Zeit in Minuten, nach der der Alarm automatisch als Notfall bestätigt gilt
+      default: 5
       selector:
         number:
-          min: 10
-          max: 600
-          unit_of_measurement: "Sekunden"
+          min: 1
+          max: 60
+          unit_of_measurement: minutes
 
-    emergency_mode_boolean:
-      name: "Notfallmodus 🏃‍♂️"
-      description: "Input Boolean zum Auslösen des Notfalls"
-      selector:
-        entity:
-          domain: input_boolean
+automation:
+  - alias: Rauchmelder Alarm
+    trigger:
+      - platform: state
+        entity_id: !input smoke_detectors
+        to: 'on'
+    action:
+      # Alarm ausgelöst Aktionen
+      - service: light.turn_on
+        target: !input alarm_triggered_lights
 
-    ##########################################
-    # 7️⃣ Testmodus 🧪
-    ##########################################
-    testmode_boolean:
-      name: "Testmodus aktivieren 🧪"
-      description: "Input Boolean zum Aktivieren des Testmodus"
-      selector:
-        entity:
-          domain: input_boolean
+      # Push Benachrichtigung mit Critical Alert und Buttons
+      - service: notify.mobile_app
+        data:
+          target: !input residents_group
+          message: "🚨 Rauchmelder Alarm! Bitte wählen:"
+          data:
+            push:
+              category: "critical_alert"
+            actions:
+              - action: "EMERGENCY_CONFIRMED"
+                title: "Notfall bestätigen"
+              - action: "FALSE_ALARM"
+                title: "Fehlalarm"
 
-    testmode_actions:
-      name: "Testmodus Aktionen"
-      description: "Welche Aktionen im Testmodus ausgeführt werden"
-      selector:
-        select:
-          options:
-            - "Volles Programm"
-            - "Sirene"
-            - "Lichter/Szenen"
-            - "TTS"
-            - "Push"
-            - "Entitäten"
-            - "Rauchmelder-Buzzer-Modus"
+      # Warten auf Benutzerinteraktion oder Timeout
+      - wait_for_trigger:
+          - platform: event
+            event_type: mobile_app_notification_action
+            event_data:
+              action: EMERGENCY_CONFIRMED
+          - platform: event
+            event_type: mobile_app_notification_action
+            event_data:
+              action: FALSE_ALARM
+        timeout: "{{ !input alarm_timeout * 60 }}"
+        continue_on_timeout: true
 
-    testmode_duration:
-      name: "Testmodus Dauer"
-      description: "Dauer des Testmodus in Sekunden"
-      default: 30
-      selector:
-        number:
-          min: 5
-          max: 600
-          unit_of_measurement: "Sekunden"
+      # Ausführen der Modus-Aktionen basierend auf der Aktion oder Timeout
+      - choose:
+          # Timeout → automatisch Notfall bestätigt
+          - conditions:
+              - condition: template
+                value_template: >
+                  {% set last_action = wait.trigger %}
+                  {{ last_action is none }}
+            sequence:
+              - service: light.turn_on
+                target: !input emergency_confirmed_lights
+              - service: notify.mobile_app
+                data:
+                  target: !input residents_group
+                  message: "✅ Notfall automatisch bestätigt (Timeout)!"
+                  data:
+                    push:
+                      category: "critical_alert"
+
+          # Notfall bestätigt manuell
+          - conditions:
+              - condition: event
+                event_type: mobile_app_notification_action
+                event_data:
+                  action: EMERGENCY_CONFIRMED
+            sequence:
+              - service: light.turn_on
+                target: !input emergency_confirmed_lights
+              - service: notify.mobile_app
+                data:
+                  target: !input residents_group
+                  message: "✅ Notfall bestätigt!"
+                  data:
+                    push:
+                      category: "critical_alert"
+
+          # Fehlalarm
+          - conditions:
+              - condition: event
+                event_type: mobile_app_notification_action
+                event_data:
+                  action: FALSE_ALARM
+            sequence:
+              - service: light.turn_on
+                target: !input false_alarm_lights
+              - service: notify.mobile_app
+                data:
+                  target: !input residents_group
+                  message: "⚠️ Fehlalarm!"
+                  data:
+                    push:
+                      category: "critical_alert"
