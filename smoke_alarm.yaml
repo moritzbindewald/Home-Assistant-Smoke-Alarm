@@ -6,7 +6,7 @@ blueprint:
   input:
     smoke_sensors:
       name: Rauchmelder
-      description: Liste der zu überwachenden Rauchmelder (mindestens einer)
+      description: "Liste der zu überwachenden Rauchmelder (mindestens einer)"
       selector:
         entity:
           domain: binary_sensor
@@ -14,14 +14,14 @@ blueprint:
           multiple: true
     lights:
       name: Lichter zum Einschalten
-      description: Diese Lampen werden bei Alarm auf 100% eingeschaltet
+      description: "Diese Lampen werden bei Alarm auf 100% eingeschaltet"
       selector:
         entity:
           domain: light
           multiple: true
     covers:
       name: Abdeckungen zum Öffnen (optional)
-      description: Optional: Diese Rollläden/Abdeckungen werden bei Alarm geöffnet
+      description: "Optional: Diese Rollläden/Abdeckungen werden bei Alarm geöffnet"
       default: []
       selector:
         entity:
@@ -29,12 +29,12 @@ blueprint:
           multiple: true
     notify_target:
       name: Benachrichtigungsziel
-      description: Empfänger für Benachrichtigung
+      description: "Empfänger für Benachrichtigung"
       selector:
         target: {}
     duration:
       name: Alarmdauer (Minuten)
-      description: Wie lange bleiben Aktionen nach Alarm aktiv?
+      description: "Wie lange bleiben Aktionen nach Alarm aktiv?"
       default: 15
       selector:
         number:
@@ -43,7 +43,7 @@ blueprint:
           unit_of_measurement: Minuten
     mute_device:
       name: Gerät zum Stummschalten (optional)
-      description: Optional: Gerät/Entität (z.B. Sirene, Rauchmelder), das nach Ablauf gemutet wird
+      description: "Optional: Gerät/Entität (z.B. Sirene, Rauchmelder), das nach Ablauf gemutet wird"
       default: ""
       selector:
         device: {}
@@ -66,6 +66,7 @@ action:
               - service: cover.open_cover
                 target:
                   entity_id: !input covers
+
           - if:
               - condition: template
                 value_template: "{{ (inputs.lights | length > 0) }}"
@@ -73,21 +74,25 @@ action:
               - service: light.turn_on
                 target:
                   entity_id: !input lights
-                
+                data:
                   brightness_pct: 100
+
           - service: notify.notify
-            
+            data:
               message: "Rauchalarm! Prüfen Sie die Rauchmelder: {{ trigger.to_state.name }}"
               target: !input notify_target
+
           - delay:
               minutes: !input duration
+
           - if:
               - condition: template
-                value_template: "{{ !input mute_device != '' }}"
+                value_template: "{{ mute_device != '' }}"
             then:
               - service: select.select_option
-                
-                  option: mute
                 target:
                   device_id: !input mute_device
+                data:
+                  option: mute
+
 mode: single
