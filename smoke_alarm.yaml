@@ -1,11 +1,12 @@
 blueprint:
   name: Rauchmelder Alarm (Universell)
-  description: "Alarmiert bei Rauch, steuert Lichter, Abdeckung, und Benachrichtigung — frei wählbare Geräte & Gruppen"
+  description: >
+    Alarmiert bei Rauch, steuert Lichter, Abdeckungen und Benachrichtigung – alle Geräte flexibel wählbar.
   domain: automation
   input:
     smoke_sensors:
       name: Rauchmelder
-      description: Liste der zu überwachenden Rauchmelder
+      description: Liste der zu überwachenden Rauchmelder (mindestens einer)
       selector:
         entity:
           domain: binary_sensor
@@ -27,8 +28,8 @@ blueprint:
           domain: cover
           multiple: true
     notify_target:
-      name: Benachrichtigungsdienst
-      description: An diese Notify-Plattform/Person wird gemeldet
+      name: Benachrichtigungsziel
+      description: Empfänger für Benachrichtigung
       selector:
         target: {}
     duration:
@@ -60,14 +61,14 @@ action:
         sequence:
           - if:
               - condition: template
-                value_template: "{{ (inputs.covers|length > 0) }}"
+                value_template: "{{ (not is_state_list_empty(!input covers)) }}"
             then:
               - service: cover.open_cover
                 target:
                   entity_id: !input covers
           - if:
               - condition: template
-                value_template: "{{ (inputs.lights|length > 0) }}"
+                value_template: "{{ (not is_state_list_empty(!input lights)) }}"
             then:
               - service: light.turn_on
                 target:
@@ -82,7 +83,7 @@ action:
               minutes: !input duration
           - if:
               - condition: template
-                value_template: "{{ inputs.mute_device != '' }}"
+                value_template: "{{ !input mute_device != '' }}"
             then:
               - service: select.select_option
                 
