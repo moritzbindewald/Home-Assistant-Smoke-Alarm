@@ -1,32 +1,26 @@
 blueprint:
-  name: Rauchmelder Alarm 🔥 (Universell + Testmodus + Wiederholungsalarm + Raumerkennung + Manueller Alarm)
+  name: "Rauchmelder Alarm 🔥 Vollständig + Testmodus + Manueller Alarm + Stummschalten"
   description: >
-    🚨 Vollständig konfigurierbare Rauchmelder-Alarmautomation für Home Assistant  
+    🚨 Vollständig konfigurierbare Rauchmelder-Alarmautomation für Home Assistant
 
     **Features:**  
     🔹 Basisalarm: Lichter, Rollos, Sirenen / TTS  
     🔹 Friendly Names für Rauchmelder  
     🔹 Raumerkennung / Sensorraum-Mapping  
     🔹 Testmodus: Einzelentität, Volltest, alle Rauchmelder  
-    🔹 trigger_all_sensors: alle Rauchmelder gleichzeitig auslösen  
-    🔹 Manueller Alarm / Trigger flexibel für verschiedene Rauchmelder  
-    🔹 Nutzerbestätigung: echter Alarm vs Falschalarm  
-    🔹 Falschalarm-Rücksetzung inkl. Farbe / Helligkeit  
-    🔹 Monitoring während Alarm  
-    🔹 Präsenzabhängige Aktionen & Anzeige  
-    🔹 Flexible TTS-Nachrichten  
-    🔹 Alarmdauer, Wartezeit, Timeout  
+    🔹 Manueller Alarm / Trigger flexibel  
     🔹 Wiederholungsalarm / Reminder  
     🔹 Flexible Stummschaltung / Buzzer-Option  
-    🔹 UI in ausklappbaren Sektionen
+    🔹 Präsenzabhängige Aktionen & Anzeige  
+    🔹 Monitoring während Alarm
 
   domain: automation
 
   input:
-    # --- Sektion 1: Rauchmelder ---
+    # --- Rauchmelder ---
     smoke_sensors:
-      name: Rauchmelder *
-      description: Liste der zu überwachenden Rauchmelder (mindestens einer)
+      name: "Rauchmelder *"
+      description: "Liste der zu überwachenden Rauchmelder"
       selector:
         entity:
           domain: binary_sensor
@@ -34,23 +28,23 @@ blueprint:
           multiple: true
 
     smoke_sensor_friendly_names:
-      name: Friendly Names für Rauchmelder
-      description: Optional: Friendly Names für die einzelnen Rauchmelder
+      name: "Friendly Names"
+      description: "Optional: Friendly Names für Rauchmelder"
       default: {}
       selector:
         object: {}
 
     smoke_sensor_rooms:
-      name: Räume für Rauchmelder
-      description: Optional: Rauchmelder bestimmten Räumen zuordnen
+      name: "Räume"
+      description: "Optional: Rauchmelder bestimmten Räumen zuordnen"
       default: {}
       selector:
         object: {}
 
-    # --- Sektion 2: Alarmgeräte ---
+    # --- Alarmgeräte ---
     lights:
-      name: 💡 Lichter
-      description: Lichter, die bei Alarm aktiviert werden
+      name: "💡 Lichter"
+      description: "Lichter bei Alarm"
       default: []
       selector:
         entity:
@@ -58,8 +52,8 @@ blueprint:
           multiple: true
 
     covers:
-      name: 🪟 Rollos
-      description: Rollos, die bei Alarm geöffnet werden
+      name: "🪟 Rollos"
+      description: "Rollos bei Alarm"
       default: []
       selector:
         entity:
@@ -67,94 +61,92 @@ blueprint:
           multiple: true
 
     sirens:
-      name: 🔊 Sirenen / Lautsprecher
-      description: Geräte, die Töne abspielen können
+      name: "🔊 Sirenen"
+      description: "Geräte, die Töne abspielen"
       default: []
       selector:
         entity:
           domain: media_player
           multiple: true
 
-    # --- Sektion 3: Benachrichtigung & TTS ---
     tts_message:
-      name: 🗣️ TTS Nachricht
-      description: Nachricht, die auf Lautsprechern / Alexa abgespielt wird
+      name: "🗣️ TTS Nachricht"
+      description: "Nachricht für Lautsprecher / Alexa"
       default: "Rauchalarm! Bitte prüfen Sie die Rauchmelder."
       selector:
         text: {}
 
     notify_target:
-      name: 📩 Benachrichtigung
-      description: Optional: Push-Empfänger
+      name: "📩 Benachrichtigung"
+      description: "Optional: Push-Empfänger"
       default: []
       selector:
         target: {}
 
     include_home_status_in_notification:
-      name: 🏠 Anwesenheitsstatus anzeigen
-      description: Wenn aktiviert, wird angezeigt, wer zuhause ist
+      name: "🏠 Anwesenheitsstatus anzeigen"
+      description: "Zeigt, wer zuhause ist"
       default: true
       selector:
         boolean: {}
 
     presence_sensors:
-      name: 👥 Präsenzsensoren
-      description: Optional: Sensoren für Anwesenheit
+      name: "👥 Präsenzsensoren"
+      description: "Optional: Sensoren für Anwesenheit"
       default: []
       selector:
         entity:
           domain: binary_sensor
           multiple: true
 
-    # --- Sektion 4: Dauer & Timeout ---
     duration:
-      name: ⏱️ Alarmdauer (Minuten)
+      name: "⏱️ Alarmdauer (Minuten)"
       default: 15
       selector:
         number:
           min: 1
           max: 60
-          unit_of_measurement: Minuten
+          unit_of_measurement: "Minuten"
 
     wait_timeout:
-      name: ⏳ Wartezeit auf Nutzerbestätigung (Minuten)
+      name: "⏳ Wartezeit auf Nutzerbestätigung (Minuten)"
       default: 10
       selector:
         number:
           min: 1
           max: 60
-          unit_of_measurement: Minuten
+          unit_of_measurement: "Minuten"
 
     continue_on_timeout:
-      name: Alarm bei Timeout weiterlaufen lassen
+      name: "Alarm bei Timeout weiterlaufen lassen"
       default: true
       selector:
         boolean: {}
 
     repeat_alarm:
-      name: 🔁 Wiederholungsalarm
-      description: Wenn aktiviert, wird nach Timeout erneut eine Benachrichtigung geschickt
+      name: "🔁 Wiederholungsalarm"
+      description: "Benachrichtigung nach Timeout erneut"
       default: true
       selector:
         boolean: {}
 
     watch_devices:
-      name: Überwachung während Alarm
-      description: Geräte, die während eines Alarms überwacht und ggf. wieder aktiviert werden sollen
+      name: "Geräte überwachen"
+      description: "Geräte, die während Alarm überwacht werden"
       default: []
       selector:
         entity:
           multiple: true
 
-    # --- Sektion 5: Mute / Buzzer ---
+    # --- Stummschaltung / Buzzer ---
     mute_device:
-      name: 🔕 Gerät zum Stummschalten
+      name: "🔕 Gerät zum Stummschalten"
       default: ""
       selector:
         device: {}
 
     mute_method:
-      name: Mute-Methode
+      name: "Mute-Methode"
       default: "select_option"
       selector:
         select:
@@ -163,9 +155,9 @@ blueprint:
             - "turn_off"
             - "service_call"
 
-    # --- Sektion 6: Testmodus ---
+    # --- Testmodus ---
     test_mode:
-      name: 🧪 Testmodus
+      name: "🧪 Testmodus"
       default: "aus"
       selector:
         select:
@@ -180,30 +172,28 @@ blueprint:
             - "volltest"
 
     test_entity:
-      name: Einzelentität testen
+      name: "Einzelentität testen"
       default: ""
       selector:
         entity:
           multiple: false
 
     trigger_all_sensors:
-      name: Alle Rauchmelder auslösen
+      name: "Alle Rauchmelder auslösen"
       default: false
       selector:
         boolean: {}
 
-    # --- Sektion 7: Manueller Alarm ---
+    # --- Manueller Alarm ---
     manual_trigger_entity:
-      name: Gerät/Entität für manuellen Alarm
-      description: Optional: Gerät/Entität, um Alarm manuell auszulösen
+      name: "Gerät/Entität für manuellen Alarm"
       default: ""
       selector:
         entity:
           multiple: false
 
     manual_trigger_mode:
-      name: Manueller Alarm-Modus
-      description: Wie soll der manuelle Alarm ausgelöst werden (z. B. select_option, turn_on, service_call)
+      name: "Manueller Alarm-Modus"
       default: "select_option"
       selector:
         select:
@@ -255,9 +245,9 @@ action:
                 {% if trigger_all_sensors %}
                   {{ smoke_sensors }}
                 {% elif test_mode == 'einzelentitaet' and test_entity != '' %}
-                  [{{ test_entity }}]
+                  ["{{ test_entity }}"]
                 {% else %}
-                  [{{ trigger.entity_id }}]
+                  ["{{ trigger.entity_id }}"]
                 {% endif %}
           - repeat:
               for_each: "{{ sensors_to_trigger }}"
@@ -292,7 +282,74 @@ action:
                             message: !input tts_message
 
   # --- Manueller Alarm ---
-  - if:
-      - condition: template
-        value_template: "{{ manual_trigger_entity != '' }}"
-   
+  - choose:
+      - conditions: "{{ manual_trigger_entity != '' }}"
+        sequence:
+          - service: >
+              {% if manual_trigger_mode == 'turn_on' %}
+                homeassistant.turn_on
+              {% elif manual_trigger_mode == 'service_call' %}
+                script.trigger_manual_alarm
+              {% else %}
+                homeassistant.turn_on
+              {% endif %}
+            target:
+              entity_id: "{{ manual_trigger_entity }}"
+          - service: notify.notify
+            data:
+              message: "💬 Manueller Alarm ausgelöst: {{ smoke_names.get(manual_trigger_entity, manual_trigger_entity) }}"
+              target: !input notify_target
+
+  # --- Standard-Alarm + Stummschalten ---
+  - choose:
+      - conditions: "{{ test_mode in ['aus','volltest'] }}"
+        sequence:
+          - service: light.turn_on
+            target:
+              entity_id: !input lights
+            data:
+              brightness_pct: 100
+          - service: cover.open_cover
+            target:
+              entity_id: !input covers
+          - service: tts.google_translate_say
+            target:
+              entity_id: !input sirens
+            data:
+              message: !input tts_message
+          - service: notify.notify
+            data:
+              message: >
+                Rauchalarm! {{ smoke_names | default('Unbekannte Sensoren') }} ausgelöst
+              target: !input notify_target
+          - choose:
+              - conditions: "{{ mute_device != '' }}"
+                sequence:
+                  - choose:
+                      - conditions: "{{ mute_method == 'turn_off' }}"
+                        sequence:
+                          - service: homeassistant.turn_off
+                            target:
+                              entity_id: !input mute_device
+                      - conditions: "{{ mute_method == 'service_call' }}"
+                        sequence:
+                          - service: script.mute_device_service
+                            data:
+                              device: !input mute_device
+                      - conditions: "{{ mute_method == 'select_option' }}"
+                        sequence:
+                          - service: select.select_option
+                            target:
+                              entity_id: !input mute_device
+                            data:
+                              option: "stumm"
+
+  # --- Wiederholungsalarm ---
+  - choose:
+      - conditions: "{{ repeat_alarm }}"
+        sequence:
+          - delay: "00:{{ wait_timeout }}:00"
+          - service: notify.notify
+            data:
+              message: "🔁 Wiederholungsalarm: {{ smoke_names | default('Unbekannte Sensoren') }}"
+              target: !input notify_target
