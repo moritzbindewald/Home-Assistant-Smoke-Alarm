@@ -1,236 +1,182 @@
 blueprint:
-  name: "Feueralarm Full Dashboard + Auto Buzzer 🔥"
+  name: Feueralarm Vollversion 🔥
   description: >
-    Vollständiger Feueralarm-Blueprint mit automatischer Buzzer-Steuerung.
-    Testmodus stumm, Normalalarm laut, Fehlalarm aus.
+    Voll ausgestatteter Feueralarm-Blueprint für Home Assistant. Enthält Alarm-Modi, Eskalation, Präsenzlogik,
+    Push-Benachrichtigungen, Licht-/TTS-Steuerung, Rauchmelder, Notfallmodus
+    und Testmodus.
   domain: automation
   input:
-    # Rauchmelder 🌐
+
+    ##########################################
+    # 1️⃣ Rauchmelder 🌐
+    ##########################################
     smoke_detectors:
-      name: "🌐 Rauchmelder"
-      description: "Alle zu überwachenden Rauchmelder"
+      name: Rauchmelder 🌐
+      description: Rauchmelder zur Synchronisation
       selector:
         entity:
           domain: binary_sensor
           multiple: true
 
-    # Lichter / Szenen 💡
-    alarm_lights:
-      name: "🚨 Alarm-Lichter"
+    smoke_detector_mode:
+      name: Buzzer-Modus Rauchmelder
+      description: buzzer_select, buzzer_alarm oder buzzer_mute
+      default: buzzer_alarm
+      selector:
+        select:
+          options:
+            - buzzer_select
+            - buzzer_alarm
+            - buzzer_mute
+
+    ##########################################
+    # 2️⃣ Präsenz-Erkennung 👥
+    ##########################################
+    persons:
+      name: Personen im Haushalt
+      description: Personen-Entitäten für Anwesenheit
       selector:
         entity:
-          domain: light
+          domain: person
           multiple: true
-    escape_lights:
-      name: "🟢 Fluchtweg-Lichter"
+
+    presence_sensors:
+      name: Präsenzsensoren 👥
+      description: Bewegungsmelder, Türen, Fenster etc.
       selector:
         entity:
-          domain: light
+          domain: binary_sensor
           multiple: true
-    emergency_lights:
-      name: "⚪ Notfall-Lichter"
+
+    presence_no_one_home_action:
+      name: Sonderfall: Niemand zu Hause, Aktivität erkannt
+      description: Aktion, wenn niemand zu Hause ist, aber Bewegung erkannt wird
+      default: nothing
+      selector:
+        select:
+          options:
+            - alarm
+            - push_only
+            - nothing
+
+    ##########################################
+    # 3️⃣ Push-Gruppen 👪📲
+    ##########################################
+    residents_devices:
+      name: Bewohner Geräte 👪
+      description: Geräte/Entitäten, die App-Push bei Alarmen erhalten
+      selector:
+        target:
+          entity:
+            multiple: true
+
+    emergency_contacts_devices:
+      name: Notfallkontakte Geräte 👪
+      description: Geräte/Entitäten, die Push nur bei Notfall bestätigt erhalten
+      selector:
+        target:
+          entity:
+            multiple: true
+
+    ##########################################
+    # 4️⃣ Licht / Szenen 💡
+    ##########################################
+    lights_scenes:
+      name: Licht / Szenen 💡
+      description: Alarm-Lichter, Fluchtweg, Notfall-Beleuchtung
       selector:
         entity:
           domain: light
           multiple: true
 
-    # TTS 🗣️
+    lights_restore_during_alarm:
+      name: Wiederherstellungslogik aktiv
+      description: Lichter/Szenen während aktiven Alarmen automatisch wieder einschalten
+      default: true
+      selector:
+        boolean: {}
+
+    ##########################################
+    # 5️⃣ TTS 🗣️
+    ##########################################
     tts_speakers:
-      name: "🗣️ TTS-Speaker"
+      name: TTS-Speaker 🗣️
+      description: Smarte Lautsprecher für Alarmmeldungen
       selector:
         entity:
           domain: media_player
           multiple: true
 
-    # Konfigurierbare Entitäten ⚙️
-    custom_entities:
-      name: "⚙️ Rollos, Steckdosen, Smart Locks"
+    ##########################################
+    # 6️⃣ Eskalation / Alarm-Modi / Notfall
+    ##########################################
+    alarm_mode:
+      name: Alarmmodus
+      description: Auswahl des aktuellen Alarmmodus
       selector:
-        entity:
-          multiple: true
+        select:
+          options:
+            - Kein Alarm
+            - Alarm aktiv
+            - Notfall bestätigt
+            - Fehlalarm
 
-    # Push / Notfallkontakte 📲
-    push_service:
-      name: "📲 Push-Service"
+    # Unterpunkte pro Modus für konfigurierbare Entitäten
+    alarm_mode_entities:
+      name: Entitäten pro Alarmmodus
+      description: Welche Geräte/Rollos/Steckdosen/Kameras bei diesem Modus gesteuert werden
       selector:
-        action:
-    residents_group:
-      name: "👪 Bewohner"
-      selector:
-        entity:
-          domain: group
-    emergency_contacts:
-      name: "🆘 Notfallkontakte"
-      selector:
-        entity:
-          domain: group
+        target:
+          entity:
+            multiple: true
 
-    # Notfallmodus / Testmodus 🏃‍♂️🧪
-    emergency_button:
-      name: "🏃‍♂️ Notfallmodus"
+    escalation_time:
+      name: Zeit bis Eskalation ⚠️
+      description: Sekunden bis Eskalation
+      default: 60
+      selector:
+        number:
+          min: 10
+          max: 600
+          unit_of_measurement: Sekunden
+
+    emergency_mode_boolean:
+      name: Notfallmodus 🏃‍♂️
+      description: Input Boolean zum Auslösen des Notfalls
       selector:
         entity:
           domain: input_boolean
-    test_mode:
-      name: "🧪 Testmodus aktiv"
-      selector:
-        boolean: {}
-    test_mode_duration:
-      name: "⏱️ Testmodus Dauer"
-      default: "00:00:30"
-      selector:
-        duration: {}
-    test_mode_full_program:
-      name: "⚡ Testmodus Vollprogramm"
-      default: true
-      selector:
-        boolean: {}
 
-    # Eskalation ⚠️
-    escalation_delay:
-      name: "⏳ Zeit bis Eskalation"
-      default: "00:02:00"
-      selector:
-        duration: {}
-
-    # Logging & Dashboard 📊
-    logbook_entity:
-      name: "📓 Logbuch"
+    ##########################################
+    # 7️⃣ Testmodus 🧪
+    ##########################################
+    testmode_boolean:
+      name: Testmodus aktivieren 🧪
+      description: Input Boolean zum Aktivieren des Testmodus
       selector:
         entity:
-          domain: input_text
-    dashboard_entity:
-      name: "📊 Dashboard"
+          domain: input_boolean
+
+    testmode_actions:
+      name: Testmodus Aktionen
+      description: Welche Aktionen im Testmodus ausgeführt werden
       selector:
-        entity:
-          domain: input_text
+        select:
+          options:
+            - Volles Programm
+            - Sirene
+            - Lichter/Szenen
+            - TTS
+            - Push
+            - Entitäten
+            - Rauchmelder-Buzzer-Modus
 
-trigger:
-  - platform: state
-    entity_id: !input smoke_detectors
-    to: "on"
-  - platform: state
-    entity_id: !input emergency_button
-    to: "on"
-  - platform: state
-    entity_id: !input test_mode
-    to: "on"
-
-condition: []
-
-action:
-  # -----------------------------
-  # Testmodus
-  # -----------------------------
-  - choose:
-      - conditions:
-          - "{{ is_state(test_mode,'on') }}"
-        sequence:
-          - service: select.select_option
-            target:
-              entity_id: !input smoke_detectors
-            data:
-              option: "buzzer_mute"
-          - service: light.turn_on
-            target:
-              entity_id:
-                - !input alarm_lights
-                - !input escape_lights
-                - !input emergency_lights
-          - service: tts.google_say
-            target:
-              entity_id: !input tts_speakers
-            data:
-              message: "Testmodus aktiviert"
-          - service: !input push_service
-            data:
-              message: "Testmodus aktiv"
-          - choose:
-              - conditions: "{{ test_mode_full_program }}"
-                sequence:
-                  - service: cover.open_cover
-                    target:
-                      entity_id: !input custom_entities
-          - delay: !input test_mode_duration
-          - service: light.turn_off
-            target:
-              entity_id:
-                - !input alarm_lights
-                - !input escape_lights
-                - !input emergency_lights
-          - service: tts.google_say
-            target:
-              entity_id: !input tts_speakers
-            data:
-              message: "Testmodus beendet"
-
-  # -----------------------------
-  # Notfallmodus manuell
-  # -----------------------------
-      - conditions:
-          - "{{ trigger.entity_id == !input emergency_button }}"
-        sequence:
-          - service: select.select_option
-            target:
-              entity_id: !input smoke_detectors
-            data:
-              option: "buzzer_alarm"
-          - service: light.turn_on
-            target:
-              entity_id:
-                - !input alarm_lights
-                - !input escape_lights
-                - !input emergency_lights
-          - service: tts.google_say
-            target:
-              entity_id: !input tts_speakers
-            data:
-              message: "Notfallmodus aktiviert!"
-          - service: !input push_service
-            data:
-              message: "Notfallmodus aktiviert"
-          - service: cover.open_cover
-            target:
-              entity_id: !input custom_entities
-
-  # -----------------------------
-  # Normaler Alarm durch Rauchmelder
-  # -----------------------------
-      - conditions: []
-        sequence:
-          - service: select.select_option
-            target:
-              entity_id: !input smoke_detectors
-            data:
-              option: "buzzer_alarm"
-          - choose:
-              - conditions: "{{ states('persons') | selectattr('state','eq','home') | list | length > 0 }}"
-                sequence:
-                  - service: light.turn_on
-                    target:
-                      entity_id:
-                        - !input alarm_lights
-                        - !input escape_lights
-                        - !input emergency_lights
-                  - service: tts.google_say
-                    target:
-                      entity_id: !input tts_speakers
-                    data:
-                      message: "Feueralarm! Bitte beachten Sie die Sicherheitsmaßnahmen."
-                  - service: !input push_service
-                    data:
-                      message: "Alarm aktiv 🚨"
-                  - service: cover.open_cover
-                    target:
-                      entity_id: !input custom_entities
-              - conditions: []
-                sequence:
-                  - service: !input push_service
-                    data:
-                      message: "Feueralarm ausgelöst, niemand zu Hause"
-          - delay: !input escalation_delay
-          - service: !input push_service
-            data:
-              message: "Eskalation: Alarm weiterhin aktiv"
-
-mode: single
+    testmode_duration:
+      name: Testmodus Dauer
+      description: Dauer des Testmodus in Sekunden
+      default: 30
+      selector:
+        number:
+          min: 5
+          max: 600
+          unit_of_measurement: Sekunden
