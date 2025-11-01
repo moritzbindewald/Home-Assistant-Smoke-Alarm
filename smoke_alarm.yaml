@@ -31,7 +31,6 @@ blueprint:
         target:
           entity:
             domain: light
-            multiple: true
 
     emergency_confirmed_lights:
       name: Notfall bestätigt – Lichter
@@ -40,7 +39,6 @@ blueprint:
         target:
           entity:
             domain: light
-            multiple: true
 
     false_alarm_lights:
       name: Fehlalarm – Lichter
@@ -49,7 +47,6 @@ blueprint:
         target:
           entity:
             domain: light
-            multiple: true
 
     alarm_timeout:
       name: Zeit bis automatische Notfallbestätigung
