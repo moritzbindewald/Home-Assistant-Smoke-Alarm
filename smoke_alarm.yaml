@@ -61,7 +61,7 @@ action:
         sequence:
           - if:
               - condition: template
-                value_template: "{{ (inputs.covers | length > 0) }}"
+                value_template: "{{ (input.covers | length) > 0 }}"
             then:
               - service: cover.open_cover
                 target:
@@ -69,7 +69,7 @@ action:
 
           - if:
               - condition: template
-                value_template: "{{ (inputs.lights | length > 0) }}"
+                value_template: "{{ (input.lights | length) > 0 }}"
             then:
               - service: light.turn_on
                 target:
@@ -78,16 +78,16 @@ action:
                   brightness_pct: 100
 
           - service: notify.notify
+            target: !input notify_target
             data:
-              message: "Rauchalarm! Prüfen Sie die Rauchmelder: {{ trigger.to_state.name }}"
-              target: !input notify_target
+              message: "🔥 Rauchalarm! Prüfen Sie die Rauchmelder: {{ trigger.to_state.name }}"
 
           - delay:
               minutes: !input duration
 
           - if:
               - condition: template
-                value_template: "{{ mute_device != '' }}"
+                value_template: "{{ input.mute_device != '' }}"
             then:
               - service: select.select_option
                 target:
