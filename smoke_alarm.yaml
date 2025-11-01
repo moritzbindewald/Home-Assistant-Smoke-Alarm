@@ -1,9 +1,9 @@
 blueprint:
-  name: Feueralarm Vollversion 🔥
+  name: "Feueralarm Vollversion 🔥"
   description: >
-    Voll ausgestatteter Feueralarm-Blueprint für Home Assistant. Enthält Alarm-Modi, Eskalation, Präsenzlogik,
+    "Voll ausgestatteter Feueralarm-Blueprint für Home Assistant. Enthält Alarm-Modi, Eskalation, Präsenzlogik,
     Push-Benachrichtigungen, Licht-/TTS-Steuerung, Rauchmelder, Notfallmodus
-    und Testmodus.
+    und Testmodus."
   domain: automation
   input:
 
@@ -11,68 +11,68 @@ blueprint:
     # 1️⃣ Rauchmelder 🌐
     ##########################################
     smoke_detectors:
-      name: Rauchmelder 🌐
-      description: Rauchmelder zur Synchronisation
+      name: "Rauchmelder 🌐"
+      description: "Rauchmelder zur Synchronisation"
       selector:
         entity:
           domain: binary_sensor
           multiple: true
 
     smoke_detector_mode:
-      name: Buzzer-Modus Rauchmelder
-      description: buzzer_select, buzzer_alarm oder buzzer_mute
-      default: buzzer_alarm
+      name: "Buzzer-Modus Rauchmelder"
+      description: "buzzer_select, buzzer_alarm oder buzzer_mute"
+      default: "buzzer_alarm"
       selector:
         select:
           options:
-            - buzzer_select
-            - buzzer_alarm
-            - buzzer_mute
+            - "buzzer_select"
+            - "buzzer_alarm"
+            - "buzzer_mute"
 
     ##########################################
     # 2️⃣ Präsenz-Erkennung 👥
     ##########################################
     persons:
-      name: Personen im Haushalt
-      description: Personen-Entitäten für Anwesenheit
+      name: "Personen im Haushalt"
+      description: "Personen-Entitäten für Anwesenheit"
       selector:
         entity:
           domain: person
           multiple: true
 
     presence_sensors:
-      name: Präsenzsensoren 👥
-      description: Bewegungsmelder, Türen, Fenster etc.
+      name: "Präsenzsensoren 👥"
+      description: "Bewegungsmelder, Türen, Fenster etc."
       selector:
         entity:
           domain: binary_sensor
           multiple: true
 
     presence_no_one_home_action:
-      name: Sonderfall: Niemand zu Hause, Aktivität erkannt
-      description: Aktion, wenn niemand zu Hause ist, aber Bewegung erkannt wird
-      default: nothing
+      name: "Sonderfall: Niemand zu Hause, Aktivität erkannt"
+      description: "Aktion, wenn niemand zu Hause ist, aber Bewegung erkannt wird"
+      default: "nothing"
       selector:
         select:
           options:
-            - alarm
-            - push_only
-            - nothing
+            - "alarm"
+            - "push_only"
+            - "nothing"
 
     ##########################################
     # 3️⃣ Push-Gruppen 👪📲
     ##########################################
     residents_devices:
-      name: Bewohner Geräte 👪
-      description: Geräte/Entitäten, die App-Push bei Alarmen erhalten
+      name: "Bewohner Geräte 👪"
+      description: "Geräte/Entitäten, die App-Push bei Alarmen erhalten"
       selector:
         target:
           entity:
             multiple: true
 
     emergency_contacts_devices:
-      name: Notfallkontakte Geräte 👪
-      description: Geräte/Entitäten, die Push nur bei Notfall bestätigt erhalten
+      name: "Notfallkontakte Geräte 👪"
+      description: "Geräte/Entitäten, die Push nur bei Notfall bestätigt erhalten"
       selector:
         target:
           entity:
@@ -82,16 +82,16 @@ blueprint:
     # 4️⃣ Licht / Szenen 💡
     ##########################################
     lights_scenes:
-      name: Licht / Szenen 💡
-      description: Alarm-Lichter, Fluchtweg, Notfall-Beleuchtung
+      name: "Licht / Szenen 💡"
+      description: "Alarm-Lichter, Fluchtweg, Notfall-Beleuchtung"
       selector:
         entity:
           domain: light
           multiple: true
 
     lights_restore_during_alarm:
-      name: Wiederherstellungslogik aktiv
-      description: Lichter/Szenen während aktiven Alarmen automatisch wieder einschalten
+      name: "Wiederherstellungslogik aktiv"
+      description: "Lichter/Szenen während aktiven Alarmen automatisch wieder einschalten"
       default: true
       selector:
         boolean: {}
@@ -100,8 +100,8 @@ blueprint:
     # 5️⃣ TTS 🗣️
     ##########################################
     tts_speakers:
-      name: TTS-Speaker 🗣️
-      description: Smarte Lautsprecher für Alarmmeldungen
+      name: "TTS-Speaker 🗣️"
+      description: "Smarte Lautsprecher für Alarmmeldungen"
       selector:
         entity:
           domain: media_player
@@ -111,38 +111,37 @@ blueprint:
     # 6️⃣ Eskalation / Alarm-Modi / Notfall
     ##########################################
     alarm_mode:
-      name: Alarmmodus
-      description: Auswahl des aktuellen Alarmmodus
+      name: "Alarmmodus"
+      description: "Auswahl des aktuellen Alarmmodus"
       selector:
         select:
           options:
-            - Kein Alarm
-            - Alarm aktiv
-            - Notfall bestätigt
-            - Fehlalarm
+            - "Kein Alarm"
+            - "Alarm aktiv"
+            - "Notfall bestätigt"
+            - "Fehlalarm"
 
-    # Unterpunkte pro Modus für konfigurierbare Entitäten
     alarm_mode_entities:
-      name: Entitäten pro Alarmmodus
-      description: Welche Geräte/Rollos/Steckdosen/Kameras bei diesem Modus gesteuert werden
+      name: "Entitäten pro Alarmmodus"
+      description: "Welche Geräte/Rollos/Steckdosen/Kameras bei diesem Modus gesteuert werden"
       selector:
         target:
           entity:
             multiple: true
 
     escalation_time:
-      name: Zeit bis Eskalation ⚠️
-      description: Sekunden bis Eskalation
+      name: "Zeit bis Eskalation ⚠️"
+      description: "Sekunden bis Eskalation"
       default: 60
       selector:
         number:
           min: 10
           max: 600
-          unit_of_measurement: Sekunden
+          unit_of_measurement: "Sekunden"
 
     emergency_mode_boolean:
-      name: Notfallmodus 🏃‍♂️
-      description: Input Boolean zum Auslösen des Notfalls
+      name: "Notfallmodus 🏃‍♂️"
+      description: "Input Boolean zum Auslösen des Notfalls"
       selector:
         entity:
           domain: input_boolean
@@ -151,32 +150,32 @@ blueprint:
     # 7️⃣ Testmodus 🧪
     ##########################################
     testmode_boolean:
-      name: Testmodus aktivieren 🧪
-      description: Input Boolean zum Aktivieren des Testmodus
+      name: "Testmodus aktivieren 🧪"
+      description: "Input Boolean zum Aktivieren des Testmodus"
       selector:
         entity:
           domain: input_boolean
 
     testmode_actions:
-      name: Testmodus Aktionen
-      description: Welche Aktionen im Testmodus ausgeführt werden
+      name: "Testmodus Aktionen"
+      description: "Welche Aktionen im Testmodus ausgeführt werden"
       selector:
         select:
           options:
-            - Volles Programm
-            - Sirene
-            - Lichter/Szenen
-            - TTS
-            - Push
-            - Entitäten
-            - Rauchmelder-Buzzer-Modus
+            - "Volles Programm"
+            - "Sirene"
+            - "Lichter/Szenen"
+            - "TTS"
+            - "Push"
+            - "Entitäten"
+            - "Rauchmelder-Buzzer-Modus"
 
     testmode_duration:
-      name: Testmodus Dauer
-      description: Dauer des Testmodus in Sekunden
+      name: "Testmodus Dauer"
+      description: "Dauer des Testmodus in Sekunden"
       default: 30
       selector:
         number:
           min: 5
           max: 600
-          unit_of_measurement: Sekunden
+          unit_of_measurement: "Sekunden"
