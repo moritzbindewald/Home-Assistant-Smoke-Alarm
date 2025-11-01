@@ -1,147 +1,92 @@
 blueprint:
-  name: Rauchmelder-Alarm mit Bestätigung & Sirenen-Mute
-  description: >
-    Rauchmelder-Alarm: Öffnet Rollläden, schaltet Lichter, sendet kritische Push-Benachrichtigung.
-    Die Sirene (Buzzer) wird nach Bestätigung per App stummgeschaltet.
+  name: Rauchmelder Alarm (Universell)
+  description: "Alarmiert bei Rauch, steuert Lichter, Abdeckung, und Benachrichtigung — frei wählbare Geräte & Gruppen"
   domain: automation
-
   input:
-    smoke_sensor:
+    smoke_sensors:
       name: Rauchmelder
-      description: Rauchmelder, der den Alarm auslöst.
+      description: Liste der zu überwachenden Rauchmelder
       selector:
         entity:
           domain: binary_sensor
           device_class: smoke
-
-    buzzer_select:
-      name: Rauchmelder-Buzzer (Select)
-      description: Die Select-Entität für die Sirene/Buzzer ("mute" Option).
+          multiple: true
+    lights:
+      name: Lichter zum Einschalten
+      description: Diese Lampen werden bei Alarm auf 100% eingeschaltet
       selector:
         entity:
-          domain: select
-
-    all_covers:
-      name: Alle Rollläden öffnen
-      selector:
-        boolean: {}
-      default: false
-
-    target_covers:
-      name: Ziel-Rollläden (nur ausfüllen, wenn "Alle Rollläden" aus)
-      selector:
-        target:
-          entity:
-            domain: cover
-      default: []
-
-    all_lights:
-      name: Alle Lichter einschalten
-      selector:
-        boolean: {}
-      default: false
-
-    target_lights:
-      name: Ziel-Lichter (nur ausfüllen, wenn "Alle Lichter" aus)
-      selector:
-        target:
-          entity:
-            domain: light
-      default: []
-
-    notify_devices:
-      name: Mobilgeräte für Push-Nachricht
-      selector:
-        device:
-          integration: mobile_app
+          domain: light
           multiple: true
-
-variables:
-  action_ack: "ACKNOWLEDGE_ALARM"
+    covers:
+      name: Abdeckungen zum Öffnen (optional)
+      description: Optional: Diese Rollläden/Abdeckungen werden bei Alarm geöffnet
+      default: []
+      selector:
+        entity:
+          domain: cover
+          multiple: true
+    notify_target:
+      name: Benachrichtigungsdienst
+      description: An diese Notify-Plattform/Person wird gemeldet
+      selector:
+        target: {}
+    duration:
+      name: Alarmdauer (Minuten)
+      description: Wie lange bleiben Aktionen nach Alarm aktiv?
+      default: 15
+      selector:
+        number:
+          min: 1
+          max: 60
+          unit_of_measurement: Minuten
+    mute_device:
+      name: Gerät zum Stummschalten (optional)
+      description: Optional: Gerät/Entität (z.B. Sirene, Rauchmelder), das nach Ablauf gemutet wird
+      default: ""
+      selector:
+        device: {}
 
 trigger:
   - platform: state
-    entity_id: !input smoke_sensor
+    entity_id: !input smoke_sensors
     to: "on"
+
+condition: []
 
 action:
   - choose:
-      - conditions:
-          - condition: state
-            entity_id: !input smoke_sensor
-            state: "on"
+      - conditions: []
         sequence:
-          # Rollläden öffnen (alle oder ausgewählte)
-          - choose:
-              - conditions:
-                  - condition: template
-                    value_template: "{{ input.all_covers }}"
-                sequence:
-                  - service: cover.open_cover
-                    target:
-                      entity_id: all
-              - default:
-                  - service: cover.open_cover
-                    target: !input target_covers
-
-          # Lichter einschalten (alle oder ausgewählte)
-          - choose:
-              - conditions:
-                  - condition: template
-                    value_template: "{{ input.all_lights }}"
-                sequence:
-                  - service: light.turn_on
-                    target:
-                      entity_id: all
-                    
-                      brightness_pct: 100
-              - default:
-                  - service: light.turn_on
-                    target: !input target_lights
-                    
-                      brightness_pct: 100
-
-          # Push an ausgewählte Geräte mit Bestätigungs-Button
-          - repeat:
-              for_each: !input notify_devices
-              sequence:
-                - service: notify.mobile_app_{{ repeat.item }}
-                  
-                    title: "🚨 Rauchmelder Alarm!"
-                    message: >
-                      Alarm ausgelöst um {{ now().strftime('%H:%M:%S') }} Uhr
-                      vom Gerät: {{ state_attr(input.smoke_sensor, 'friendly_name') }}.
-                    
-                      critical: 1
-                      sound: "alarm.caf"
-                      actions:
-                        - action: "{{ action_ack }}"
-                          title: "Alarm bestätigen"
-                          destructive: true
-                          authenticationRequired: true
-
-          # Auf Bestätigung warten
-          - wait_for_trigger:
-              - platform: event
-                event_type: mobile_app_notification_action
-                event_
-                  action: "{{ action_ack }}"
-            timeout: 3600
-            continue_on_timeout: false
-
-          # Buzzer/Sirene muten
-          - service: select.select_option
-            target:
-              entity_id: !input buzzer_select
+          - if:
+              - condition: template
+                value_template: "{{ (inputs.covers|length > 0) }}"
+            then:
+              - service: cover.open_cover
+                target:
+                  entity_id: !input covers
+          - if:
+              - condition: template
+                value_template: "{{ (inputs.lights|length > 0) }}"
+            then:
+              - service: light.turn_on
+                target:
+                  entity_id: !input lights
+                
+                  brightness_pct: 100
+          - service: notify.notify
             
-              option: "mute"
-
-          # Feedback an alle mobilen Geräte
-          - repeat:
-              for_each: !input notify_devices
-              sequence:
-                - service: notify.mobile_app_{{ repeat.item }}
-                  
-                    message: "Rauchmelder-Sirene deaktiviert (Bestätigung erhalten)."
-
+              message: "Rauchalarm! Prüfen Sie die Rauchmelder: {{ trigger.to_state.name }}"
+              target: !input notify_target
+          - delay:
+              minutes: !input duration
+          - if:
+              - condition: template
+                value_template: "{{ inputs.mute_device != '' }}"
+            then:
+              - service: select.select_option
+                
+                  option: mute
+                target:
+                  device_id: !input mute_device
 mode: single
