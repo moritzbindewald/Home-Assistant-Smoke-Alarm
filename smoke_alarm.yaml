@@ -233,14 +233,4 @@ action:
             data:
               message: "Eskalation: Alarm weiterhin aktiv"
 
-  # -----------------------------
-  # Fehlalarm / Notfall bestätigt
-  # -----------------------------
-      - conditions:
-          - "{{ trigger.entity_id in [] }}" # Intern gesteuert durch Automation/Buttons
-        sequence:
-          - choose:
-              - conditions: "{{ false }}"  # nur interne Logik
-                sequence: []
-
 mode: single
